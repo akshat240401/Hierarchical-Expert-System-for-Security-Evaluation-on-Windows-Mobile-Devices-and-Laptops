@@ -1,5 +1,7 @@
 import winreg
 
+import subprocess
+
 def get_installed_software():
     software_list = []
     for hkey in [winreg.HKEY_LOCAL_MACHINE, winreg.HKEY_CURRENT_USER]:
@@ -19,3 +21,10 @@ def get_installed_software():
 
 installed_software = get_installed_software()
 print(installed_software)
+
+def get_firewall_rules():
+    result = subprocess.run(['netsh', 'advfirewall', 'firewall', 'show', 'rule', 'name=all'], stdout=subprocess.PIPE)
+    return result.stdout.decode()
+
+firewall_rules = get_firewall_rules()
+print(firewall_rules)
