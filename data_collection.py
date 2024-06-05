@@ -28,3 +28,10 @@ def get_firewall_rules():
 
 firewall_rules = get_firewall_rules()
 print(firewall_rules)
+
+def get_password_policy():
+    result = subprocess.run(['net', 'accounts'], stdout=subprocess.PIPE)
+    return result.stdout.decode()
+
+password_policy = get_password_policy()
+print(password_policy)
