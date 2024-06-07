@@ -34,7 +34,6 @@ class SecurityEvaluation(KnowledgeEngine):
         return 'insecure'
 
     def evaluate_installed_software(self, software_list):
-        # List of known vulnerable software
         vulnerable_software = ["Adobe Flash Player", "Java 6", "Java 7", "QuickTime", "RealPlayer", "VLC Media Player"]
         for software in software_list:
             if software in vulnerable_software:
@@ -42,55 +41,55 @@ class SecurityEvaluation(KnowledgeEngine):
         return True
 
     def evaluate_password_policy(self, policy):
-        # Ensure these match the actual policy names on your system
-        if 'Minimum password length' in policy and 'Password expires' in policy:
-            return True
-        return False
+        min_password_length = 'Minimum password length'
+        password_expires = 'Maximum password age'
+        policy_lines = policy.split('\n')
+        policy_dict = {}
+        for line in policy_lines:
+            if ':' in line:
+                key, value = line.split(':', 1)
+                policy_dict[key.strip()] = value.strip()
+        if min_password_length in policy_dict and int(policy_dict[min_password_length]) >= 8:
+            password_length_ok = True
+        else:
+            password_length_ok = False
+        if password_expires in policy_dict and int(policy_dict[password_expires]) <= 90:
+            password_expires_ok = True
+        else:
+            password_expires_ok = False
+        return password_length_ok and password_expires_ok
 
     def evaluate_firewall_rules(self, rules):
-        # Ensure these match the actual rules relevant to your system
         essential_rules = ["AllowInbound", "BlockOutbound", "DefaultInboundAction", "DefaultOutboundAction"]
         for rule in essential_rules:
             if rule not in rules:
                 return False
         return True
 
-# Define the engine
 engine = SecurityEvaluation()
-
-# Define the rules
-engine.reset()  # Prepare the engine for the execution.
+engine.reset()
 engine.declare(Fact(action='check_system'))
-engine.run()  # Run it!
+engine.run()
 
-# Collect real data
 X = collect_and_encode_data()
+X_tensor = torch.tensor(X, dtype=torch.float32).view(1, -1)
+y_tensor = torch.tensor([1], dtype=torch.float32)
 
-# Convert the data to PyTorch tensors
-X_tensor = torch.tensor(X, dtype=torch.float32).view(1, -1)  # Reshape to 1 sample with multiple features
-# Ensure this label aligns with your actual data; it represents the security status
-y_tensor = torch.tensor([1], dtype=torch.float32)  # Example label (1 for secure, 0 for insecure)
-
-# Define a simple neural network
 class Net(nn.Module):
     def __init__(self):
         super(Net, self).__init__()
-        self.fc1 = nn.Linear(X_tensor.shape[1], 5)  # Adjust the input size to match the number of features
+        self.fc1 = nn.Linear(X_tensor.shape[1], 5)
         self.fc2 = nn.Linear(5, 1)
 
     def forward(self, x):
         x = torch.relu(self.fc1(x))
         x = torch.sigmoid(self.fc2(x))
         return x
-
-# Create the model
+    
 model = Net()
-
-# Define loss and optimizer
 criterion = nn.BCELoss()
 optimizer = optim.SGD(model.parameters(), lr=0.01)
 
-# Training loop
 for epoch in range(1000):
     optimizer.zero_grad()
     outputs = model(X_tensor)
@@ -98,13 +97,9 @@ for epoch in range(1000):
     loss.backward()
     optimizer.step()
 
-# Save the model
 torch.save(model.state_dict(), 'model.pth')
 
-# Load the trained model
 model = Net()
 model.load_state_dict(torch.load('model.pth'))
-
-# Evaluate new data (use the same X_tensor for demonstration)
 prediction = model(X_tensor)
 print(prediction.item())
