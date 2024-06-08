@@ -1,60 +1,59 @@
 from experta import *
-import torch
-import torch.nn as nn
-import torch.optim as optim
+import subprocess
+import winreg
 from data_collection import get_installed_software, get_firewall_rules, get_password_policy, get_driver_signatures, get_antivirus_status, get_system_updates, get_encryption_status, collect_and_encode_data
 
 class SecurityEvaluation(KnowledgeEngine):
     @Rule(Fact(action='check_system'))
     def check_system(self):
-        self.declare(Fact(integrity=self.check_integrity()))
-        self.declare(Fact(authentication=self.check_authentication()))
-        self.declare(Fact(network_security=self.check_network_security()))
-        self.declare(Fact(driver_signatures=self.check_driver_signatures()))
-        self.declare(Fact(antivirus=self.check_antivirus_status()))
-        self.declare(Fact(updates=self.check_system_updates()))
-        self.declare(Fact(encryption=self.check_encryption_status()))
+        self.declare(Fact(integrity_score=self.check_integrity()))
+        self.declare(Fact(authentication_score=self.check_authentication()))
+        self.declare(Fact(network_security_score=self.check_network_security()))
+        self.declare(Fact(driver_signatures_score=self.check_driver_signatures()))
+        self.declare(Fact(antivirus_score=self.check_antivirus_status()))
+        self.declare(Fact(updates_score=self.check_system_updates()))
+        self.declare(Fact(encryption_score=self.check_encryption_status()))
 
     def check_integrity(self):
         installed_software = get_installed_software()
         if self.evaluate_installed_software(installed_software):
-            return 'secure'
-        return 'insecure'
+            return 1.0
+        return 0.0
 
     def check_authentication(self):
         password_policy = get_password_policy()
         if self.evaluate_password_policy(password_policy):
-            return 'secure'
-        return 'insecure'
+            return 1.0
+        return 0.0
 
     def check_network_security(self):
         firewall_rules = get_firewall_rules()
         if self.evaluate_firewall_rules(firewall_rules):
-            return 'secure'
-        return 'insecure'
+            return 1.0
+        return 0.0
 
     def check_driver_signatures(self):
         signed_drivers, unsigned_drivers = get_driver_signatures()
         if len(unsigned_drivers) == 0:
-            return 'secure'
-        return 'insecure'
+            return 1.0
+        return 0.0
 
     def check_antivirus_status(self):
         antivirus_name, antivirus_version = get_antivirus_status()
         if antivirus_name != "Unknown" and antivirus_version != "0.0":
-            return 'secure'
-        return 'insecure'
+            return 1.0
+        return 0.0
 
     def check_system_updates(self):
         updates = get_system_updates()
         if len(updates) > 0:
-            return 'secure'
-        return 'insecure'
+            return 1.0
+        return 0.0
 
     def check_encryption_status(self):
         if get_encryption_status():
-            return 'secure'
-        return 'insecure'
+            return 1.0
+        return 0.0
 
     def evaluate_installed_software(self, software_list):
         vulnerable_software = ["Adobe Flash Player", "Java 6", "Java 7", "QuickTime", "RealPlayer", "VLC Media Player"]
@@ -97,37 +96,16 @@ engine = SecurityEvaluation()
 engine.reset()
 engine.declare(Fact(action='check_system'))
 engine.run()
-
 X = collect_and_encode_data()
-X_numeric = [float(i) if isinstance(i, (int, float)) else 0 for i in X]
-X_tensor = torch.tensor(X_numeric, dtype=torch.float32).view(1, -1)
-y_tensor = torch.tensor([1], dtype=torch.float32)
+print("Collected Data:", X)
 
-class Net(nn.Module):
-    def __init__(self):
-        super(Net, self).__init__()
-        self.fc1 = nn.Linear(X_tensor.shape[1], 5)
-        self.fc2 = nn.Linear(5, 1)
+integrity_score = engine.check_integrity()
+authentication_score = engine.check_authentication()
+network_security_score = engine.check_network_security()
+driver_signatures_score = engine.check_driver_signatures()
+antivirus_score = engine.check_antivirus_status()
+updates_score = engine.check_system_updates()
+encryption_score = engine.check_encryption_status()
 
-    def forward(self, x):
-        x = torch.relu(self.fc1(x))
-        x = torch.sigmoid(self.fc2(x))
-        return x
-
-model = Net()
-criterion = nn.BCELoss()
-optimizer = optim.SGD(model.parameters(), lr=0.01)
-
-for epoch in range(1000):
-    optimizer.zero_grad()
-    outputs = model(X_tensor)
-    loss = criterion(outputs, y_tensor.view(-1, 1))
-    loss.backward()
-    optimizer.step()
-
-torch.save(model.state_dict(), 'model.pth')
-
-model = Net()
-model.load_state_dict(torch.load('model.pth'))
-prediction = model(X_tensor)
-print(prediction.item())
+overall_score = (integrity_score + authentication_score + network_security_score + driver_signatures_score + antivirus_score + updates_score + encryption_score) / 7.0
+print("Overall Security Score:", overall_score)
