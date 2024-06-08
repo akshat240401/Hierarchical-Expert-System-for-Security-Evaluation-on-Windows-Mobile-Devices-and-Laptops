@@ -1,6 +1,4 @@
 from experta import *
-import subprocess
-import winreg
 from data_collection import get_installed_software, get_firewall_rules, get_password_policy, get_driver_signatures, get_antivirus_status, get_system_updates, get_encryption_status, collect_and_encode_data
 
 class SecurityEvaluation(KnowledgeEngine):
