@@ -2,6 +2,74 @@ from experta import *
 from data_collection import get_installed_software, get_firewall_rules, get_password_policy, get_driver_signatures, get_antivirus_status, get_system_updates, get_encryption_status, collect_and_encode_data
 
 class SecurityEvaluation(KnowledgeEngine):
+
+    __slots__ = "installed_apps", "firewall_rules", "password_policy", "drivers", "antivirus", "system_updates", "encryption_status"
+
+    def __init__(self, installed_apps, firewall_rules, password_policy, drivers, antivirus, system_updates, encryption_status):
+        self.installed_apps = installed_apps
+        self.firewall_rules = firewall_rules
+        self.password_policy = password_policy
+        self.drivers = drivers
+        self.antivirus = antivirus
+        self.system_updates = system_updates
+        self.encryption_status = encryption_status
+        KnowledgeEngine.__init__(self)
+
+    @DefFacts()
+    def ES_init(self):
+        print("Initialising expert sytem")
+        yield Fact(action="check_system")
+
+    @Rule(Fact(action='check_system'), NOT(Fact(apps=W())), salience=1)
+    def check_system(self):
+        self.declare(Fact(apps=self.installed_apps))
+
+    @Rule(Fact(action='check_system'), NOT(Fact(firewall=W())))
+    def check_system(self):
+        self.declare(Fact(firewall=self.firewall_rules))
+
+    @Rule(Fact(action='check_system'), NOT(Fact(pasword=W())))
+    def check_system(self):
+        self.declare(Fact(pasword=self.password_policy))
+
+    @Rule(Fact(action='check_system'), NOT(Fact(drivers=W())))
+    def check_system(self):
+        self.declare(Fact(drivers=self.drivers))
+
+    @Rule(Fact(action='check_system'), NOT(Fact(antivirus=W())))
+    def check_system(self):
+        self.declare(Fact(antivirus=self.antivirus))
+
+    @Rule(Fact(action='check_system'), NOT(Fact(updates=W())))
+    def check_system(self):
+        self.declare(Fact(updates=self.system_updates))
+
+    @Rule(Fact(action='check_system'), NOT(Fact(encryption=W())))
+    def check_system(self):
+        self.declare(Fact(encryption=self.encryption_status))
+
+    #Apps score
+    @Rule(Fact(action='check_system'), Fact(apps=0))
+    def check_system(self):
+        self.declare(Fact(apps_score=1.0))
+
+    @Rule(Fact(action='check_system'), Fact(apps=P(lambda x: x < 5)), Fact(apps=P(lambda x: x > 0)))
+    def check_system(self):
+        self.declare(Fact(apps_score=0.75))
+
+    @Rule(Fact(action='check_system'), Fact(apps=P(lambda x: x >= 5)), Fact(apps=P(lambda x: x < 10)))
+    def check_system(self):
+        self.declare(Fact(apps_score=0.50))
+
+    @Rule(Fact(action='check_system'), Fact(apps=P(lambda x: x >= 10)))
+    def check_system(self):
+        self.declare(Fact(apps_score=0.25))
+
+    # driver score
+    @Rule(Fact(action='check_system'), Fact(apps=P(lambda x: x >= 10)))
+    def check_system(self):
+        self.declare(Fact(apps_score=0.25))
+
     @Rule(Fact(action='check_system'))
     def check_system(self):
         self.declare(Fact(integrity_score=self.check_integrity()))
@@ -90,9 +158,11 @@ class SecurityEvaluation(KnowledgeEngine):
                 return False
         return True
 
+
+
 engine = SecurityEvaluation()
 engine.reset()
-engine.declare(Fact(action='check_system'))
+# engine.declare(Fact(action='check_system'))
 engine.run()
 X = collect_and_encode_data()
 print("Collected Data:", X)
