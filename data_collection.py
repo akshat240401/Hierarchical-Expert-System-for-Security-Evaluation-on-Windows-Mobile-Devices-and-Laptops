@@ -82,23 +82,48 @@ def get_encryption_status():
         return True
     return False
 
-# def encode_installed_software(software_list):
-#     le = LabelEncoder()
-#     software_list_encoded = le.fit_transform(software_list)
-#     return software_list_encoded
 
-# def encode_firewall_rules(firewall_rules):
-#     firewall_rules_encoded = np.array([1 if "AllowInbound" in firewall_rules else 0,
-#                                        1 if "BlockOutbound" in firewall_rules else 0])
-#     return firewall_rules_encoded
+def calc_num_untrusted_apps(installed_software):
+    num_of_untrusted_apps = 0
+    vulnerable_apps = ["Adobe Flash Player", "Java 6", "Java 7", "QuickTime", "RealPlayer", "VLC Media Player"]
+    for app in installed_software:
+        if app in vulnerable_apps:
+            num_of_untrusted_apps += 1
+    return num_of_untrusted_apps
 
-# def encode_password_policy(password_policy):
-#     password_length = 1 if 'Minimum password length' in password_policy else 0
-#     password_expires = 1 if 'Password expires' in password_policy else 0
-#     password_policy_encoded = np.array([password_length, password_expires])
-#     return password_policy_encoded
+def get_password_policy_params(password_policy):
+    min_password_length = 'Minimum password length'
+    password_expires = 'Maximum password age (days)'
+    force_logoff = 'Force user logoff how long after time expires?'
+    policy_lines = password_policy.split('\n')
+    policy_dict = {}
+    for line in policy_lines:
+        if ':' in line:
+            key, value = line.split(':', 1)
+            policy_dict[key.strip()] = value.strip()
+    password_length = 0
+    password_duration = 0
+    logoff = True
+    for k in policy_dict:
+        print(k, policy_dict[k])
+    if min_password_length in policy_dict:
+        password_length = int(policy_dict[min_password_length])
+    if password_expires in policy_dict:
+        password_duration = int(policy_dict[password_expires])
+    if force_logoff in policy_dict and policy_dict[force_logoff] == 'Never':
+        logoff = False
+    return password_length, password_duration, logoff 
 
-def collect_and_encode_data():
+def evaluate_firewall_rules(rules):
+    essential_rules = ["AllowInbound", "BlockOutbound", "DefaultInboundAction", "DefaultOutboundAction"]
+    for rule in essential_rules:
+        if rule not in rules:
+            return False
+    return True
+
+
+def get_facts():
+    # print(get_password_policy().split())
     installed_software = get_installed_software()
     firewall_rules = get_firewall_rules()
     password_policy = get_password_policy()
@@ -107,36 +132,18 @@ def collect_and_encode_data():
     system_updates = get_system_updates()
     encryption_status = get_encryption_status()
 
-    # installed_software_encoded = encode_installed_software(installed_software)
-    # firewall_rules_encoded = encode_firewall_rules(firewall_rules)
-    # password_policy_encoded = encode_password_policy(password_policy)
-
-    antivirus_version_num = float(antivirus_version.replace('.', '')) if antivirus_version != "Unknown" else 0.0
-
-    X = np.hstack([installed_software_encoded[:2], firewall_rules_encoded, password_policy_encoded,
-                   len(signed_drivers), len(unsigned_drivers), antivirus_version_num,
-                   len(system_updates), int(encryption_status)])
-    return X
-
-
-def get_facts():
-    print(get_encryption_status())
-    # installed_software = get_installed_software()
-    # firewall_rules = get_firewall_rules()
-    # password_policy = get_password_policy()
-    # signed_drivers, unsigned_drivers = get_driver_signatures()
-    # antivirus_name, antivirus_version = get_antivirus_status()
-    # system_updates = get_system_updates()
-    # encryption_status = get_encryption_status()
+    facts = dict()
+    facts["untrusted_apps"] = calc_num_untrusted_apps(installed_software)
+    facts["unsigned_drivers"] = len(unsigned_drivers)
+    facts["pasword_length"], facts["password_duration"], facts["logoff"] = get_password_policy_params(password_policy)
+    facts["intact_firewall"] = evaluate_firewall_rules(firewall_rules)
+    facts["antivrus_name"] = antivirus_name
+    facts["antivrus_version"] = antivirus_version
+    facts["updates"] = len(system_updates)
+    facts["encryption"] = encryption_status
+    return facts
 
 
 if __name__ == "__main__":
     data = get_facts()
     print(data)
-
-
-
-
-# signed and unsigned drivers
-# registry
-# updates
