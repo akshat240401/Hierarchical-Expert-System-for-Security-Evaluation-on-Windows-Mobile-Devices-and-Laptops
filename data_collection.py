@@ -1,7 +1,5 @@
 import winreg
 import subprocess
-import numpy as np
-# from sklearn.preprocessing import LabelEncoder
 
 def get_installed_software():
     print("Fetching installed software info\n")
@@ -90,6 +88,7 @@ def get_encryption_status():
 
 
 def calc_num_untrusted_apps(installed_software):
+    print("Calculating number of untrusted apps\n")
     num_of_untrusted_apps = 0
     vulnerable_apps = ["Adobe Flash Player", "Java 6", "Java 7", "QuickTime", "RealPlayer", "VLC Media Player"]
     for app in installed_software:
@@ -98,6 +97,7 @@ def calc_num_untrusted_apps(installed_software):
     return num_of_untrusted_apps
 
 def get_password_policy_params(password_policy):
+    print("Extracting password length, duration and logoff policies\n")
     min_password_length = 'Minimum password length'
     password_expires = 'Maximum password age (days)'
     force_logoff = 'Force user logoff how long after time expires?'
@@ -110,8 +110,6 @@ def get_password_policy_params(password_policy):
     password_length = 0
     password_duration = 0
     logoff = True
-    # for k in policy_dict:
-        # print(k, policy_dict[k])
     if min_password_length in policy_dict:
         password_length = int(policy_dict[min_password_length])
     if password_expires in policy_dict:
@@ -121,6 +119,7 @@ def get_password_policy_params(password_policy):
     return password_length, password_duration, logoff 
 
 def evaluate_firewall_rules(rules):
+    print("Evaluating firewall rules\n")
     essential_rules = ["AllowInbound", "BlockOutbound", "DefaultInboundAction", "DefaultOutboundAction"]
     for rule in essential_rules:
         if rule not in rules:
@@ -129,14 +128,14 @@ def evaluate_firewall_rules(rules):
 
 
 def is_antivirus_active(antivirus_name, antivirus_version):
-    # antivirus_name, antivirus_version = get_antivirus_status()
+    print("Checking antivirus\n")
     if antivirus_name != "Unknown" and antivirus_version != "0.0":
         return True
     return False
 
 
 def get_facts():
-    # print(get_password_policy().split())
+    print("DATA ACQUISITION ==============================")
     installed_software = get_installed_software()
     firewall_rules = get_firewall_rules()
     password_policy = get_password_policy()
@@ -144,7 +143,7 @@ def get_facts():
     antivirus_name, antivirus_version = get_antivirus_status()
     system_updates = get_system_updates()
     encryption_status = get_encryption_status()
-
+    print("DATA PRE-PROCESSING ==============================")
     facts = dict()
     facts["untrusted_apps"] = calc_num_untrusted_apps(installed_software)
     facts["unsigned_drivers"] = len(unsigned_drivers)

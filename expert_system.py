@@ -19,7 +19,7 @@ class SecurityEvaluation(KnowledgeEngine):
 
     @DefFacts()
     def ES_init(self):
-        print("\nINITIALIZING EXPERT SYSTEM\n")
+        print("INITIALIZING EXPERT SYSTEM\n")
         yield Fact(action="check_system")
 
     @Rule(Fact(action='check_system'), NOT(Fact(apps=W())))
@@ -243,17 +243,10 @@ class SecurityEvaluation(KnowledgeEngine):
         sum = (os_integrity_score * 2) + network_integrity_score + user_auth_score + (data_protection_score * 3) + (device_integrity_score * 3)
         tot_weights = 2 + 1 + 1 + 3 + 3
         final_score = sum / tot_weights
-        print(os_integrity_score)
-        print(network_integrity_score)
-        print(user_auth_score)
-        print(data_protection_score)
-        print(device_integrity_score)
-        print("\nFINAL SECCURITY SCORE FOR THE DEVICE IS : " + str(final_score))
-    # @Rule(Fact(action='check_system'), Fact(drivers_score=MATCH.drivers_score))
-    # def test(self, drivers_score):
-    #     print(drivers_score)
+        print("\nFINAL SECURITY SCORE FOR THE DEVICE IS : " + str(final_score))
 
 facts = get_facts()
+print("EXPERT SYSTEM ==================================")
 engine = SecurityEvaluation(facts)
 engine.reset()
 engine.run()
