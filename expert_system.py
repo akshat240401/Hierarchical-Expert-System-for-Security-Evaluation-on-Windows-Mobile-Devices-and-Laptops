@@ -3,7 +3,7 @@ from data_collection import *
 
 class SecurityEvaluation(KnowledgeEngine):
 
-    __slots__ = "installed_apps", "firewall_rules", "password_policy", "drivers", "antivirus", "system_updates", "encryption_status"
+    __slots__ = "installed_apps", "firewall_rules", "password_policy", "drivers", "antivirus", "system_updates", "encryption_status", "recommendations", "issues"
 
     def __init__(self, facts):
         self.installed_apps = facts["untrusted_apps"]
@@ -15,6 +15,8 @@ class SecurityEvaluation(KnowledgeEngine):
         self.antivirus = facts["antivirus"]
         self.system_updates = facts["updates"]
         self.encryption_status = facts["encryption"]
+        self.recommendations = ""
+        self.issues = ""
         KnowledgeEngine.__init__(self)
 
     @DefFacts()
@@ -68,16 +70,22 @@ class SecurityEvaluation(KnowledgeEngine):
     @Rule(Fact(action='check_system'), Fact(apps=P(lambda x: x < 5)), Fact(apps=P(lambda x: x > 0)))
     def calc_apps_score_two(self):
         print("APPLICATION SECURITY RATING COMPLETE\n")
+        self.issues += "Potentially dangerous applications installed on device\n"
+        self.recommendations += "Uninstall dangerous applications from devic\n"
         self.declare(Fact(apps_score=0.75))
 
     @Rule(Fact(action='check_system'), Fact(apps=P(lambda x: x >= 5)), Fact(apps=P(lambda x: x < 10)))
     def calc_apps_score_three(self):
         print("APPLICATION SECURITY RATING COMPLETE\n")
+        self.issues += "Potentially dangerous applications installed on device\n"
+        self.recommendations += "Uninstall dangerous applications from device\n"
         self.declare(Fact(apps_score=0.50))
 
     @Rule(Fact(action='check_system'), Fact(apps=P(lambda x: x >= 10)))
     def calc_apps_score_four(self):
         print("APPLICATION SECURITY RATING COMPLETE\n")
+        self.issues += "Potentially dangerous applications installed on device\n"
+        self.recommendations += "Uninstall dangerous applications from device\n"
         self.declare(Fact(apps_score=0.25))
 
     # driver score
@@ -89,26 +97,36 @@ class SecurityEvaluation(KnowledgeEngine):
     @Rule(Fact(action='check_system'), Fact(drivers=P(lambda x: x < 5)), Fact(drivers=P(lambda x: x > 0)))
     def calc_drivers_score_two(self):
         print("DEVICE DRIVERS SECURITY RATING COMPLETE\n")
+        self.issues += "Unsigned drivers installed on device\n"
+        self.recommendations += "Review drivers for malicious activity and update drivers to signed versions\n"
         self.declare(Fact(drivers_score=0.80))
 
     @Rule(Fact(action='check_system'), Fact(drivers=P(lambda x: x >= 5)), Fact(drivers=P(lambda x: x < 10)))
     def calc_drivers_score_three(self):
         print("DEVICE DRIVERS SECURITY RATING COMPLETE\n")
+        self.issues += "Unsigned drivers installed on device\n"
+        self.recommendations += "Review drivers for malicious activity and update drivers to signed versions\n"
         self.declare(Fact(drivers_score=0.60))
 
     @Rule(Fact(action='check_system'), Fact(drivers=P(lambda x: x >= 10)), Fact(drivers=P(lambda x: x < 15)))
     def calc_drivers_score_four(self):
         print("DEVICE DRIVERS SECURITY RATING COMPLETE\n")
+        self.issues += "Unsigned drivers installed on device\n"
+        self.recommendations += "Review drivers for malicious activity and update drivers to signed versions\n"
         self.declare(Fact(drivers_score=0.40))
 
     @Rule(Fact(action='check_system'), Fact(drivers=P(lambda x: x >= 15)), Fact(drivers=P(lambda x: x < 20)))
     def calc_drivers_score_five(self):
         print("DEVICE DRIVERS SECURITY RATING COMPLETE\n")
+        self.issues += "Unsigned drivers installed on device\n"
+        self.recommendations += "Review drivers for malicious activity and update drivers to signed versions\n"
         self.declare(Fact(drivers_score=0.20))
 
     @Rule(Fact(action='check_system'), Fact(drivers=P(lambda x: x >= 20)))
     def calc_drivers_score_six(self):
         print("DEVICE DRIVERS SECURITY RATING COMPLETE\n")
+        self.issues += "Unsigned drivers installed on device\n"
+        self.recommendations += "Review drivers for malicious activity and update drivers to signed versions\n"
         self.declare(Fact(drivers_score=0.1))
 
     # password score
@@ -118,6 +136,8 @@ class SecurityEvaluation(KnowledgeEngine):
 
     @Rule(Fact(action='check_system'), Fact(logoff_policy=False))
     def calc_logoff_score_two(self):
+        self.issues += "User logoff on timeout not specified\n"
+        self.recommendations += "Specify a timeout limit for automatic user logoff on device\n"
         self.declare(Fact(logoff_score=0.0))
 
     @Rule(Fact(action='check_system'), Fact(password_length=P(lambda x: x >= 8)))
@@ -126,6 +146,8 @@ class SecurityEvaluation(KnowledgeEngine):
 
     @Rule(Fact(action='check_system'), Fact(password_length=P(lambda x: x < 8)))
     def calc_pass_length_score_two(self):
+        self.issues += "Password length too short\n"
+        self.recommendations += "Increase the minimum password length\n"
         self.declare(Fact(pass_length_score=0.0))
 
     @Rule(Fact(action='check_system'), Fact(password_duration=P(lambda x: x < 90)))
@@ -134,6 +156,8 @@ class SecurityEvaluation(KnowledgeEngine):
 
     @Rule(Fact(action='check_system'), Fact(password_duration=P(lambda x: x >= 90)))
     def calc_pass_duration_score_two(self):
+        self.issues += "Maximum time before password change required is too long\n"
+        self.recommendations += "Decrease the maximum time required for password change\n"
         self.declare(Fact(pass_duration_score=0.0))
 
     @Rule(Fact(action='check_system'), 
@@ -154,6 +178,8 @@ class SecurityEvaluation(KnowledgeEngine):
     @Rule(Fact(action='check_system'), Fact(firewall=False))
     def calc_firewall_score_two(self):
         print("FIREWALL RULES SECURITY RATING COMPLETE\n")
+        self.issues += "Insecure firewall rules detected\n"
+        self.recommendations += "Increase security in firewall rules\n"
         self.declare(Fact(firewall_score=0.0))
     
     # antivirus score
@@ -165,6 +191,8 @@ class SecurityEvaluation(KnowledgeEngine):
     @Rule(Fact(action='check_system'), Fact(antivirus=False))
     def calc_antivirus_score_two(self):
         print("ANTIVIRUS SECURITY RATING COMPLETE\n")
+        self.issues += "No antivirus detected\n"
+        self.recommendations += "Install an antivirus on the system\n"
         self.declare(Fact(antivirus_score=0.0))
 
     # updates score
@@ -176,6 +204,8 @@ class SecurityEvaluation(KnowledgeEngine):
     @Rule(Fact(action='check_system'), Fact(updates=0))
     def calc_updates_score_two(self):
         print("UPDATE LOGS SECURITY RATING COMPLETE\n")
+        self.issues += "Nno security updates have been installed\n"
+        self.recommendations += "Install the latest security updates from microsoft\n"
         self.declare(Fact(updates_score=0.0))
     
     # encryption score
@@ -187,6 +217,8 @@ class SecurityEvaluation(KnowledgeEngine):
     @Rule(Fact(action='check_system'), Fact(encryption=False))
     def calc_encryption_score_two(self):
         print("DRIVE ENCRYPTION SECURITY RATING COMPLETE\n")
+        self.issues += "No excryption detected on native drives\n"
+        self.recommendations += "Setup a Bitlocker encryption on the native drives\n"
         self.declare(Fact(encryption_score=0.0))
 
     # Middle layer metrics evaluation
@@ -244,6 +276,10 @@ class SecurityEvaluation(KnowledgeEngine):
         tot_weights = 2 + 1 + 1 + 3 + 3
         final_score = sum / tot_weights
         print("\nFINAL SECURITY SCORE FOR THE DEVICE IS : " + str(final_score))
+        print("ISSUES DETECTED : ")
+        print(self.issues)
+        print("RECOMMENDATIONS TO INCREASE SECURITY ON DEVICE : ")
+        print(self.recommendations)
 
 facts = get_facts()
 print("EXPERT SYSTEM ==================================")
