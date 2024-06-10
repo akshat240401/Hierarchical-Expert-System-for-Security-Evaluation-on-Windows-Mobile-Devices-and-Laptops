@@ -4,6 +4,7 @@ import numpy as np
 # from sklearn.preprocessing import LabelEncoder
 
 def get_installed_software():
+    print("Fetching installed software info\n")
     software_list = []
     for hkey in [winreg.HKEY_LOCAL_MACHINE, winreg.HKEY_CURRENT_USER]:
         try:
@@ -21,10 +22,12 @@ def get_installed_software():
     return software_list
 
 def get_firewall_rules():
+    print("Fetching installed firewall rules\n")
     result = subprocess.run(['netsh', 'advfirewall', 'firewall', 'show', 'rule', 'name=all'], stdout=subprocess.PIPE)
     return result.stdout.decode()
 
 def get_password_policy():
+    print("Fetching installed password policy info\n")
     result = subprocess.run(['net', 'accounts'], stdout=subprocess.PIPE)
     return result.stdout.decode()
 
@@ -40,7 +43,7 @@ def get_driver_signatures():
     d = d[2:]
     signed_drivers = []
     unsigned_drivers = []
-    print("Checking digital signature on device drivers")
+    print("Checking digital signature on device drivers\n")
     for driver in d:
         name = driver[0]
         path = driver[-1]
@@ -60,6 +63,7 @@ def get_driver_signatures():
     return signed_drivers, unsigned_drivers
 
 def get_antivirus_status():
+    print("Fetching antivirus info\n")
     result = subprocess.run(['wmic', 'antivirusproduct', 'get', 'displayName,productState'], stdout=subprocess.PIPE)
     lines = result.stdout.decode().split('\n')
     if len(lines) > 1:
@@ -71,12 +75,14 @@ def get_antivirus_status():
     return antivirus_name, antivirus_version
 
 def get_system_updates():
+    print("Fetching system updates info\n")
     result = subprocess.run(['wmic', 'qfe', 'get', 'HotFixID'], stdout=subprocess.PIPE)
     updates = result.stdout.decode().split('\n')[1:]
     updates = [update.strip() for update in updates if update.strip()]
     return updates
 
 def get_encryption_status():
+    print("Fetching encryption status info\n")
     result = subprocess.run(['manage-bde', '-status'], stdout=subprocess.PIPE)
     if 'Percentage Encrypted: 100%' in result.stdout.decode():
         return True
@@ -104,8 +110,8 @@ def get_password_policy_params(password_policy):
     password_length = 0
     password_duration = 0
     logoff = True
-    for k in policy_dict:
-        print(k, policy_dict[k])
+    # for k in policy_dict:
+        # print(k, policy_dict[k])
     if min_password_length in policy_dict:
         password_length = int(policy_dict[min_password_length])
     if password_expires in policy_dict:
@@ -120,6 +126,13 @@ def evaluate_firewall_rules(rules):
         if rule not in rules:
             return False
     return True
+
+
+def is_antivirus_active(antivirus_name, antivirus_version):
+    # antivirus_name, antivirus_version = get_antivirus_status()
+    if antivirus_name != "Unknown" and antivirus_version != "0.0":
+        return True
+    return False
 
 
 def get_facts():
@@ -137,8 +150,7 @@ def get_facts():
     facts["unsigned_drivers"] = len(unsigned_drivers)
     facts["pasword_length"], facts["password_duration"], facts["logoff"] = get_password_policy_params(password_policy)
     facts["intact_firewall"] = evaluate_firewall_rules(firewall_rules)
-    facts["antivrus_name"] = antivirus_name
-    facts["antivrus_version"] = antivirus_version
+    facts["antivirus"] = is_antivirus_active(antivirus_name, antivirus_version)
     facts["updates"] = len(system_updates)
     facts["encryption"] = encryption_status
     return facts
